@@ -1,6 +1,10 @@
 services:
   app:
-    build: .
+    build:
+      context: .
+      args:
+        UID: 1000
+        GID: 1000
     volumes:
       - ./src:/var/www/html
     depends_on:
