@@ -139,7 +139,16 @@ class ApiFetcherService
                 $record['date'] = is_string($record['date']) ? $record['date'] : now()->format('Y-m-d H:i:s');
             }
 
-            // stocks и incomes добавим позже по аналогии
+            if ($entity === 'incomes') {
+                $record['income_id'] = $item['income_id'] ?? 0;
+                $record['number'] = $item['number'] ?? null;
+                $record['date_close'] = $item['date_close'] ?? null;
+                $record['quantity'] = (int)($item['quantity'] ?? 0);
+                // Для incomes total_price часто "0", но храним как есть
+                $record['total_price'] = $item['total_price'] ?? 0;
+                // Гео только склад
+                $record['warehouse_name'] = $item['warehouse_name'] ?? '';
+            }
 
             $mapped[] = $record;
         }
