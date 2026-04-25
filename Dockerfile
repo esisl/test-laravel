@@ -1,7 +1,7 @@
 FROM php:8.3-fpm
 
-ARG UID=1000
-ARG GID=1000
+ARG UID=1001
+ARG GID=1001
 
 RUN apt-get update && apt-get install -y \
     git zip unzip libzip-dev libpng-dev libonig-dev libxml2-dev \
