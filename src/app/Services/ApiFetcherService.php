@@ -5,7 +5,6 @@ namespace App\Services;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Str;
 
 class ApiFetcherService
 {
@@ -38,7 +37,7 @@ class ApiFetcherService
         do {
             try {
                 $response = Http::timeout($this->timeout)
-                    ->retry($this->retryCount, 200)
+                    ->retry($this->retryCount, 500)
                     ->get("{$this->baseUrl}{$path}", [
                         'dateFrom' => $dateFrom,
                         'dateTo' => $dateTo,
@@ -47,42 +46,51 @@ class ApiFetcherService
                     ]);
 
                 if (!$response->successful()) {
-                    Log::error("API request failed on page {$page}. Status: {$response->status()}");
+                    $msg = "API failed on page {$page}. Status: {$response->status()}. Body: {$response->body()}";
+                    Log::error($msg);
+                    if ($page === 1) {
+                        throw new \RuntimeException("Critical API error: {$msg}");
+                    }
                     break;
                 }
 
                 $data = $response->json();
                 if (empty($data['data']) || !is_array($data['data'])) {
-                    Log::warning("Empty or malformed data on page {$page}.");
-                    break;
+                    Log::warning("Empty/malformed data on page {$page}.");
+                    if ($page === 1) break;
+                    continue;
                 }
 
-                // Пагинация берётся из meta, даже если в запросе передавали page=0
                 if ($lastPage === null) {
                     $lastPage = $data['meta']['last_page'] ?? 1;
                     Log::info("Total pages detected: {$lastPage}");
                 }
 
-                $records = $this->mapToDbFormat($data['data'], $entity);
-                
-                // Пакетная вставка без проверок уникальности (сырой сбор)
-                DB::table("{$entity}s")->insert($records);
+                $records = $this->mapToDbFormat($data['data']);
+
+                // ИСПРАВЛЕНО: используем $entity напрямую (совпадает с именем таблицы)
+                DB::table($entity)->insert($records);
                 $totalInserted += count($records);
 
                 Log::info("Inserted page {$page}/{$lastPage}. Records: " . count($records));
 
             } catch (\Exception $e) {
                 Log::error("Exception on page {$page}: " . $e->getMessage());
+                if ($page === 1) throw $e;
                 break;
             }
 
             $page++;
         } while ($page <= $lastPage);
 
-        Log::info("Fetch completed for {$entity}. Total inserted: {$totalInserted}");
+        if ($totalInserted === 0) {
+            Log::warning("Fetch completed, but 0 records inserted. Check storage/logs/laravel.log for details.");
+        } else {
+            Log::info("Fetch completed for {$entity}. Total inserted: {$totalInserted}");
+        }
     }
 
-    protected function mapToDbFormat(array $data, string $entity): array
+    protected function mapToDbFormat(array $data): array
     {
         $mapped = [];
         foreach ($data as $item) {
