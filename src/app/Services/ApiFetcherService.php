@@ -93,6 +93,103 @@ class ApiFetcherService
     protected function mapToDbFormat(array $data, string $entity): array
     {
         $mapped = [];
+        
+        foreach ($data as $item) {
+            // Базовые поля, общие для всех сущностей
+            $record = [
+                'created_at' => now(),
+                'updated_at' => now(),
+                'raw_data' => json_encode($item, JSON_UNESCAPED_UNICODE),
+            ];
+
+            // Entity-specific mapping
+            switch ($entity) {
+                case 'sales':
+                    $record = array_merge($record, [
+                        'sale_id' => $item['sale_id'] ?? null,
+                        'g_number' => $item['g_number'] ?? null,
+                        'date' => $item['date'] ?? now(),
+                        'last_change_date' => $item['last_change_date'] ?? now(),
+                        'supplier_article' => $item['supplier_article'] ?? null,
+                        'tech_size' => $item['tech_size'] ?? null,
+                        'barcode' => $item['barcode'] ?? null,
+                        'nm_id' => $item['nm_id'] ?? null,
+                        'total_price' => $item['total_price'] ?? 0,
+                        'discount_percent' => $item['discount_percent'] ?? 0,
+                        'for_pay' => $item['for_pay'] ?? 0,
+                        'finished_price' => $item['finished_price'] ?? 0,
+                        'price_with_disc' => $item['price_with_disc'] ?? 0,
+                        'spp' => $item['spp'] ?? null,
+                        'is_supply' => (bool)($item['is_supply'] ?? false),
+                        'is_realization' => (bool)($item['is_realization'] ?? false),
+                        'is_storno' => isset($item['is_storno']) ? (bool)$item['is_storno'] : null,
+                        'warehouse_name' => $item['warehouse_name'] ?? '',
+                        'country_name' => $item['country_name'] ?? '',
+                        'oblast_okrug_name' => $item['oblast_okrug_name'] ?? '',
+                        'region_name' => $item['region_name'] ?? '',
+                        'income_id' => $item['income_id'] ?? 0,
+                        'promo_code_discount' => $item['promo_code_discount'] ?? null,
+                        'subject' => $item['subject'] ?? null,
+                        'category' => $item['category'] ?? null,
+                        'brand' => $item['brand'] ?? null,
+                    ]);
+                    break;
+
+                case 'orders':
+                    $record = array_merge($record, [
+                        'g_number' => $item['g_number'] ?? null,
+                        'odid' => $item['odid'] ?? null,
+                        'date' => $item['date'] ?? now(),
+                        'last_change_date' => $item['last_change_date'] ?? now(),
+                        'supplier_article' => $item['supplier_article'] ?? null,
+                        'tech_size' => $item['tech_size'] ?? null,
+                        'barcode' => $item['barcode'] ?? null,
+                        'nm_id' => $item['nm_id'] ?? null,
+                        'total_price' => $item['total_price'] ?? 0,
+                        'discount_percent' => $item['discount_percent'] ?? 0,
+                        'warehouse_name' => $item['warehouse_name'] ?? '',
+                        'oblast' => $item['oblast'] ?? '',
+                        'income_id' => $item['income_id'] ?? 0,
+                        'subject' => $item['subject'] ?? null,
+                        'category' => $item['category'] ?? null,
+                        'brand' => $item['brand'] ?? null,
+                        'is_cancel' => (bool)($item['is_cancel'] ?? false),
+                        'cancel_dt' => $item['cancel_dt'] ?? null,
+                    ]);
+                    break;
+
+                case 'incomes':
+                    $record = array_merge($record, [
+                        'income_id' => $item['income_id'] ?? 0,
+                        'number' => $item['number'] ?? null,
+                        'date' => $item['date'] ?? now(),
+                        'last_change_date' => $item['last_change_date'] ?? now(),
+                        'date_close' => $item['date_close'] ?? null,
+                        'supplier_article' => $item['supplier_article'] ?? null,
+                        'tech_size' => $item['tech_size'] ?? null,
+                        'barcode' => $item['barcode'] ?? null,
+                        'nm_id' => $item['nm_id'] ?? null,
+                        'quantity' => (int)($item['quantity'] ?? 0),
+                        'total_price' => $item['total_price'] ?? 0,
+                        'warehouse_name' => $item['warehouse_name'] ?? '',
+                        // Для incomes НЕ добавляем: brand, category, subject, g_number, discount_percent и т.д.
+                    ]);
+                    break;
+
+                default:
+                    throw new \InvalidArgumentException("Unknown entity: {$entity}");
+            }
+
+            $mapped[] = $record;
+        }
+        
+        return $mapped;
+    }
+
+    /*
+    protected function mapToDbFormat(array $data, string $entity): array
+    {
+        $mapped = [];
         foreach ($data as $item) {
             $record = [
                 'g_number' => $item['g_number'] ?? null,
@@ -154,4 +251,5 @@ class ApiFetcherService
         }
         return $mapped;
     }
+        */
 }
