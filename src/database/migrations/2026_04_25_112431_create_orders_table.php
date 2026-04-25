@@ -11,11 +11,11 @@ class CreateOrdersTable extends Migration
         Schema::create('orders', function (Blueprint $table) {
             $table->id();
             
-            // Бизнес-ключи
-            $table->string('g_number', 64)->index();
+            // Бизнес-ключи (индекс объявляется ОДИН РАЗ)
+            $table->string('g_number', 64);
             $table->string('odid', 32)->nullable();
             
-            // Даты (ВАЖНО: date — datetime, last_change_date — date)
+            // Даты
             $table->dateTime('date');
             $table->date('last_change_date');
             
@@ -50,10 +50,10 @@ class CreateOrdersTable extends Migration
             
             $table->timestamps();
             
-            // Индексы
+            // Индексы (объявлены отдельно, без дублей)
             $table->index(['date', 'last_change_date']);
             $table->index('warehouse_name');
-            $table->index('g_number');
+            $table->index('g_number'); // Теперь он здесь один
         });
     }
 
