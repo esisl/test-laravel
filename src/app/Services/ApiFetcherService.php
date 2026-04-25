@@ -90,12 +90,11 @@ class ApiFetcherService
         }
     }
 
-    protected function mapToDbFormat(array $data): array
+    protected function mapToDbFormat(array $data, string $entity): array
     {
         $mapped = [];
         foreach ($data as $item) {
-            $mapped[] = [
-                'sale_id' => $item['sale_id'] ?? null,
+            $record = [
                 'g_number' => $item['g_number'] ?? null,
                 'date' => $item['date'] ?? now(),
                 'last_change_date' => $item['last_change_date'] ?? now(),
@@ -105,19 +104,8 @@ class ApiFetcherService
                 'nm_id' => $item['nm_id'] ?? null,
                 'total_price' => $item['total_price'] ?? 0,
                 'discount_percent' => $item['discount_percent'] ?? 0,
-                'for_pay' => $item['for_pay'] ?? 0,
-                'finished_price' => $item['finished_price'] ?? 0,
-                'price_with_disc' => $item['price_with_disc'] ?? 0,
-                'spp' => $item['spp'] ?? null,
-                'is_supply' => (bool)($item['is_supply'] ?? false),
-                'is_realization' => (bool)($item['is_realization'] ?? false),
-                'is_storno' => isset($item['is_storno']) ? (bool)$item['is_storno'] : null,
                 'warehouse_name' => $item['warehouse_name'] ?? '',
-                'country_name' => $item['country_name'] ?? '',
-                'oblast_okrug_name' => $item['oblast_okrug_name'] ?? '',
-                'region_name' => $item['region_name'] ?? '',
                 'income_id' => $item['income_id'] ?? 0,
-                'promo_code_discount' => $item['promo_code_discount'] ?? null,
                 'subject' => $item['subject'] ?? null,
                 'category' => $item['category'] ?? null,
                 'brand' => $item['brand'] ?? null,
@@ -125,6 +113,35 @@ class ApiFetcherService
                 'created_at' => now(),
                 'updated_at' => now(),
             ];
+
+            // Entity-specific fields
+            if ($entity === 'sales') {
+                $record['sale_id'] = $item['sale_id'] ?? null;
+                $record['for_pay'] = $item['for_pay'] ?? 0;
+                $record['finished_price'] = $item['finished_price'] ?? 0;
+                $record['price_with_disc'] = $item['price_with_disc'] ?? 0;
+                $record['spp'] = $item['spp'] ?? null;
+                $record['is_supply'] = (bool)($item['is_supply'] ?? false);
+                $record['is_realization'] = (bool)($item['is_realization'] ?? false);
+                $record['is_storno'] = isset($item['is_storno']) ? (bool)$item['is_storno'] : null;
+                $record['country_name'] = $item['country_name'] ?? '';
+                $record['oblast_okrug_name'] = $item['oblast_okrug_name'] ?? '';
+                $record['region_name'] = $item['region_name'] ?? '';
+                $record['promo_code_discount'] = $item['promo_code_discount'] ?? null;
+            }
+
+            if ($entity === 'orders') {
+                $record['odid'] = $item['odid'] ?? null;
+                $record['oblast'] = $item['oblast'] ?? '';
+                $record['is_cancel'] = (bool)($item['is_cancel'] ?? false);
+                $record['cancel_dt'] = $item['cancel_dt'] ?? null;
+                // Для orders date приходит как datetime, приводим к формату БД
+                $record['date'] = is_string($record['date']) ? $record['date'] : now()->format('Y-m-d H:i:s');
+            }
+
+            // stocks и incomes добавим позже по аналогии
+
+            $mapped[] = $record;
         }
         return $mapped;
     }
