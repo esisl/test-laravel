@@ -56,6 +56,7 @@ class CreateOrdersTable extends Migration
             $table->index('g_number'); // Теперь он здесь один
         });
     }
+    
 
     public function down(): void
     {
