@@ -66,10 +66,10 @@ class ApiFetcherService
                     Log::info("Total pages detected: {$lastPage}");
                 }
 
-                $records = $this->mapToDbFormat($data['data']);
-
-                // ИСПРАВЛЕНО: используем $entity напрямую (совпадает с именем таблицы)
-                DB::table($entity)->insert($records);
+                $records = $this->mapToDbFormat($data['data'], $entity);
+                
+                // Пакетная вставка без проверок уникальности (сырой сбор)
+                DB::table("{$entity}")->insert($records);
                 $totalInserted += count($records);
 
                 Log::info("Inserted page {$page}/{$lastPage}. Records: " . count($records));
